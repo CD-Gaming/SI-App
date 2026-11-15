@@ -1,7 +1,7 @@
 #Inventory Management App - name
-import datetime;
-from operations import Operations;
-from auditlog import Log;
+import datetime
+from operations import Operations
+from auditlog import Log
 
 
 Op = Operations()
@@ -10,7 +10,7 @@ Lg = Log()
 def space_split(text: str) -> list[str]: #splits text into seperate parts based on spaces
             term = text.split(" ")
             return term
-1
+
 # main menu loop
 while True:
     print("\n=== Inventory Management Menu ===")
@@ -32,14 +32,20 @@ while True:
 
         if exist == False:
             name = input("Enter product name: ")
-            qty = int(input("Enter quantity: "))
-            reorder = int(input("Enter reorder level: ")) #numeric value
-            userI = input("Enter expirey date in 'YEAR MONTH DAY'format with spaces: ")
-            holder = space_split(userI)
-            date = datetime.datetime(int(holder[0]) ,int(holder[1]) ,int(holder[2]))
-           
-            Lg.StoreLog(item_id,name,qty,reorder,date)
-            Op.StoreStock(item_id,name,qty,reorder)
+            
+            try:
+                qty = int(input("Enter quantity: "))
+                reorder = int(input("Enter reorder level: ")) #numeric value
+                userI = input("Enter expirey date in 'YEAR MONTH DAY'format with spaces: ")
+                holder = space_split(userI)
+                date = datetime.datetime(int(holder[0]) ,int(holder[1]) ,int(holder[2]))
+               
+                Lg.StoreLog(item_id,name,qty,reorder,date)
+                Op.StoreStock(item_id,name,qty,reorder)
+            except ValueError:
+                print("Error: Please enter valid numbers.")
+            except IndexError:
+                print("Error: Please enter the date with year, month, and day separated by spaces.")
         else:
             print("Error: Item already exists")
             
@@ -52,11 +58,14 @@ while True:
         if exist == False: 
             print("Item not found")
         else:
-            new_qty = int(input("Enter new quantity: "))
-            
-            Op.UpdateStock(item_id,new_qty)
-            Lg.UpdateLog(item_id,new_qty)   
-            print("Inventory updated successfully") #Stop here
+            try:
+                new_qty = int(input("Enter new quantity: "))
+                
+                Op.UpdateStock(item_id,new_qty)
+                Lg.UpdateLog(item_id,new_qty)   
+                print("Inventory updated successfully") #Stop here
+            except ValueError:
+                print("Error: Quantity must be a valid number.")
             
 #     # option 3: view all items and check low stock
     elif choice == "3":
@@ -92,8 +101,5 @@ while True:
      #Two conditions for stock renewal, Expired or low on product. Make into a function to check? If it is half 
      # of the initial then return a value or warning for restock necesity.
      # Should audit logs also show, when the products are added?
-     #implement exception handling
+    
     #Allow for all variables to be change able for the Update section?
-
-
-
