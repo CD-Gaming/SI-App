@@ -1,13 +1,15 @@
 import datetime;
 from operations import Operations;
-stock_data = {}
-initial_stock = {}
-report = {}
-log = []
+from auditlog import Log;
+
+
 Op = Operations()
+Lg = Log()
+
 def space_split(text: str) -> list[str]: #splits text into seperate parts based on spaces
             term = text.split(" ")
             return term
+1
 # main menu loop
 while True:
     print("\n=== Inventory Management Menu ===")
@@ -17,6 +19,7 @@ while True:
     print("4. Inventory Report")
     print("5. Contact Business")
     print("6. Exit")
+    print("===================================")
     
     choice = input("Enter choice: ")
     
@@ -34,55 +37,40 @@ while True:
             holder = space_split(userI)
             date = datetime.datetime(int(holder[0]) ,int(holder[1]) ,int(holder[2]))
            
-            Op.StoreStock(item_id,name,qty,reorder,date)
+            Lg.StoreLog(item_id,name,qty,reorder,date)
+            Op.StoreStock(item_id,name,qty,reorder)
+        else:
+            print("Error: Item already exists")
             
     # option 2: update existing stock quantity directly
-#     elif choice == "2":
-#         item_id = input("Enter product ID to update: ")
-#         if item_id not in stock_data: #Inside a class start here
-#             print("Item not found")
-#         else:
-#             new_qty = int(input("Enter new quantity: "))
-#             time = datetime.datetime.now()
-#             stock_data[item_id]["quantity"] = new_qty
-#             report[item_id]["quantity"] = new_qty #for inventory report comparison
-#             log = audit_log(item_id, new_qty,time)
-#             print("Inventory updated successfully") #Stop here
+    elif choice == "2":
+        item_id = input("Enter product ID to update: ")
+       
+        exist = Op.StockCheck(item_id)
+        
+        if exist == False: 
+            print("Item not found")
+        else:
+            new_qty = int(input("Enter new quantity: "))
+            
+            Op.UpdateStock(item_id,new_qty)
+            Lg.UpdateLog(item_id,new_qty)   
+            print("Inventory updated successfully") #Stop here
             
 #     # option 3: view all items and check low stock
     elif choice == "3":
-        if not stock_data: #inside a class start here
-            print("No stock records found")
-        else:
-            print("\nCurrent Stock Levels:")
-            for id, info in stock_data.items():
-                status = "Normal"
-                if info["quantity"] <= info["reorder_level"]:
-                    status = "Low Stock"
-                print("ID:", id, "| Name:", info["name"], "| Qty:", info["quantity"], "| Status:", status) #stop here
+        Op.ViewStock()
 
-#     elif choice == "4":
-#         print("Initial stock: " ) #inside a class start here
-#         for x, y in initial_stock.items():
-#             print("ID: ", x ,"| Name: ", y["name"], "| Qty: ", y["quantity"], "| Expiry Date: ", y["expiry date"])
-        
-#         print("----------------------------------")
-#         print(f"Updated stock: ")
-#         for x, y in report.items():
-#             print("ID: ", x ,"| Name: ", y["name"], "| Qty: ", y["quantity"], "| Expiry Date: ", y["expiry date"])
-
-#         print("----------------------------------")        
-#         print("Audit Logs: ")
-#         [print(x) for x in log]
-
-#         print("----------------------------------") #stop here
+    elif choice == "4":
+        Lg.ShowLog()
 
 #     elif choice == "5":
 #         c_name = input("Please enter the name of the company")
 #         contact = input("Please enter the email that the request should be sent to")
 #         amt = input("Please input the amount of required stock")
+
 #     # option 6: leave the program
-    elif choice == "5":
+    elif choice == "6":
         print("Exiting program")
         break
     else:
@@ -104,6 +92,7 @@ while True:
 #     # of the initial then return a value or warning for restock necesity.
 #     # Should audit logs also show, when the products are added?
 #     #implement exception handling
+#       Allow for all variables to be change able for the Update section?
 
 
 
