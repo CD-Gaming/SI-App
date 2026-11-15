@@ -1,15 +1,14 @@
-#Inventory Management App - name
+#Inventory Management App
 import datetime
 from operations import Operations
 from auditlog import Log
 
-
 Op = Operations()
 Lg = Log()
 
-def space_split(text: str) -> list[str]: #splits text into seperate parts based on spaces
-            term = text.split(" ")
-            return term
+def space_split(text: str) -> list[str]: 
+    term = text.split(" ")
+    return term
 
 # main menu loop
 while True:
@@ -25,7 +24,7 @@ while True:
     choice = input("Enter choice: ")
     
     # option 1: add new stock item
-    if choice == "1": #turn this into a while loop so that multiple products can be entered without having to constantly press 1, parameter (-1)
+    if choice == "1":
         item_id = input("Create product ID: ") 
        
         exist = Op.StockCheck(item_id)
@@ -35,21 +34,21 @@ while True:
             
             try:
                 qty = int(input("Enter quantity: "))
-                reorder = int(input("Enter reorder level: ")) #numeric value
-                userI = input("Enter expirey date in 'YEAR MONTH DAY'format with spaces: ")
+                reorder = int(input("Enter reorder level: ")) 
+                userI = input("Enter expiry date 'DAY MONTH YEAR' format with spaces: ")
                 holder = space_split(userI)
-                date = datetime.datetime(int(holder[0]) ,int(holder[1]) ,int(holder[2]))
+                date = datetime.datetime(int(holder[2]), int(holder[1]), int(holder[0]))
                
-                Lg.StoreLog(item_id,name,qty,reorder,date)
-                Op.StoreStock(item_id,name,qty,reorder)
+                Lg.StoreLog(item_id, name, qty, reorder, date)
+                Op.StoreStock(item_id, name, qty, reorder, date)
             except ValueError:
                 print("Error: Please enter valid numbers.")
             except IndexError:
-                print("Error: Please enter the date with year, month, and day separated by spaces.")
+                print("Error: Please enter the date with day, month, and year separated by spaces.")
         else:
             print("Error: Item already exists")
             
-    # option 2: update existing stock quantity directly
+    # option 2: update existing stock quantity and expiry date
     elif choice == "2":
         item_id = input("Enter product ID to update: ")
        
@@ -60,14 +59,19 @@ while True:
         else:
             try:
                 new_qty = int(input("Enter new quantity: "))
+                userI = input("Update expiry date 'DAY MONTH YEAR' format with spaces: ")
+                holder = space_split(userI)
+                new_date = datetime.datetime(int(holder[2]), int(holder[1]), int(holder[0]))
                 
-                Op.UpdateStock(item_id,new_qty)
-                Lg.UpdateLog(item_id,new_qty)   
-                print("Inventory updated successfully") #Stop here
+                Op.UpdateStock(item_id, new_qty, new_date)
+                Lg.UpdateLog(item_id, new_qty, new_date)   
+                print("Inventory updated successfully")
             except ValueError:
-                print("Error: Quantity must be a valid number.")
+                print("Error: Please enter valid numbers.")
+            except IndexError:
+                print("Error: Please enter the date with day, month, and year separated by spaces.")
             
-#     # option 3: view all items and check low stock
+    # option 3: view all items and check status
     elif choice == "3":
         Op.ViewStock()
 
@@ -79,7 +83,6 @@ while True:
 #         contact = input("Please enter the email that the request should be sent to")
 #         amt = input("Please input the amount of required stock")
 
-#     # option 6: leave the program
     elif choice == "6":
         print("Exiting program")
         break
