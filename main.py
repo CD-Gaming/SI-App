@@ -96,13 +96,12 @@ while True:
      #expiry date(include expiry date) 
      #get some Ui going somehow- 
      #prompt user to enter company email...submit a request through email? 
-     #Set a condition for reorder status to be low, average, out of stock
+    
      #Maybe compare specific products? 
      #A different version is saved for every updated change made to the stock or maybe every few updates??
      #Use a nested dictionary? for multiple reports
      #Change the reports to an unchangeable storage type?
-     #Two conditions for stock renewal, Expired or low on product. Make into a function to check? If it is half 
-     # of the initial then return a value or warning for restock necesity.
-     # Should audit logs also show, when the products are added?
+   
+     #Should audit logs also show, when the products are added?
     
-    #Allow for all variables to be change able for the Update section?
+     #Allow for all variables to be change able for the Update section?
