@@ -25,17 +25,17 @@ Label(
     width=32,
 ).pack(pady=10)
 
-# Container frame that gets swapped out cleanly on navigation
+# Container frame that gets swapped out when navigating between sections
 container = Frame(window)
-container.pack(fill=BOTH, expand=True, padx=20, pady=10)
+container.pack(fill=BOTH, expand=True, padx=20, pady=10) #automatically fills the window for the relevant widgets to be placed
 
 
 def clear_container():
-  for widget in container.winfo_children():
-    widget.destroy()
+  for widget in container.winfo_children(): #loops through all currently created widgets or app components
+    widget.destroy() #removes all widgets from the current frame in the window
 
 
-def parse_date(date_str: str) -> datetime.datetime:
+def parse_date(date_str: str) -> datetime.datetime: #Parse entered date, so that it can be input into the datetime class
   """Parses 'DD MM YYYY' into a datetime object with strict validation."""
   cleaned = date_str.strip()
   try:
@@ -69,9 +69,7 @@ def mainMenu():
   ]
 
   for text, cmd in buttons:
-    Button(container, text=text, width=40, font=("Sans", 11), command=cmd).pack(
-        pady=5
-    )
+    Button(container, text=text, width=40, font=("Sans", 11), command=cmd).pack(pady=5)
 
 
 def recordS():
@@ -146,21 +144,17 @@ def recordS():
 
       messagebox.showinfo("Success", f"Product '{name}' recorded successfully!")
       for entry in (proEntry, nameEntry, amtEntry, reorderEntry, dateEntry):
-        entry.delete(0, END)
+        entry.delete(0, END) #indicats where the new component should be added or what should be removed from where
 
-    except KeyError as e:
+    except KeyError as e: #Checks for duplicates, if true returns an error message box
       messagebox.showerror("Duplicate Entry", str(e))
-    except ValueError as e:
+    except ValueError as e: #Check for incorrect value input
       messagebox.showerror("Invalid Input", str(e))
-    except Exception as e:
+    except Exception as e: #general Error
       messagebox.showerror("Error", f"An unexpected error occurred: {e}")
 
-  Button(container, text="Submit", width=12, command=submit).grid(
-      row=6, column=0, pady=20
-  )
-  Button(container, text="Back", width=12, command=mainMenu).grid(
-      row=6, column=2, pady=20
-  )
+  Button(container, text="Submit", width=12, command=submit).grid(row=6, column=0, pady=20)
+  Button(container, text="Back", width=12, command=mainMenu).grid(row=6, column=2, pady=20)
 
 
 def updateS():
@@ -212,7 +206,7 @@ def updateS():
 
   def submit():
     try:
-      item_id = proEntry.get().strip()
+      item_id = proEntry.get().strip() #remove spaces
       raw_qty = amtEntry.get().strip()
       raw_date = dateEntry.get().strip()
 
@@ -238,33 +232,20 @@ def updateS():
     except Exception as e:
       messagebox.showerror("Error", f"An unexpected error occurred: {e}")
 
-  Button(container, text="Submit", width=12, command=submit).grid(
-      row=4, column=0, pady=20
-  )
-  Button(container, text="Back", width=12, command=mainMenu).grid(
-      row=4, column=2, pady=20
-  )
+  Button(container, text="Submit", width=12, command=submit).grid(row=4, column=0, pady=20)
+  Button(container, text="Back", width=12, command=mainMenu).grid(row=4, column=2, pady=20)
 
 
 def checkS():
   clear_container()
 
-  Label(
-      container,
-      text="Current Stock Levels",
-      font=("Sans", 16, "bold"),
-      relief=RIDGE,
-      bd=1,
-      width=30,
-  ).pack(pady=8)
+  Label(container, text="Current Stock Levels", font=("Sans", 16, "bold"), relief=RIDGE, bd=1, width=30).pack(pady=8)
 
   list_frame = Frame(container)
   list_frame.pack(fill=BOTH, expand=True, pady=5)
 
   scrollbar = Scrollbar(list_frame, orient=VERTICAL)
-  listbox = Listbox(
-      list_frame, font=("Courier", 10), yscrollcommand=scrollbar.set, height=12
-  )
+  listbox = Listbox(list_frame, font=("Courier", 10), yscrollcommand=scrollbar.set, height=12 )
   scrollbar.config(command=listbox.yview)
   scrollbar.pack(side=RIGHT, fill=Y)
   listbox.pack(side=LEFT, fill=BOTH, expand=True)
@@ -278,9 +259,9 @@ def checkS():
       listbox.insert(END, header)
       listbox.insert(END, "-" * 75)
       for item_id, name, qty, exp_str, status in stock_tuples:
-        row = f"{item_id:<8} | {name:<16} | {qty:<6} | {exp_str:<12} | {status}"
+        row = f"{item_id:<8} | {name:<16} | {qty:<6} | {exp_str:<12} | {status}" #formatted string with the information
         listbox.insert(END, row)
-  except Exception as e:
+  except Exception as e: #Goes to this excpetion if an unexpected error prevents the code from retrieving the view stock method
     messagebox.showerror("Error", f"Failed to load stock levels: {e}")
 
   Button(container, text="Back to Menu", width=15, command=mainMenu).pack(
@@ -288,25 +269,16 @@ def checkS():
   )
 
 
-def stockR():
+def stockR(): #Stock Records option
   clear_container()
 
-  Label(
-      container,
-      text="Inventory & Audit Report",
-      font=("Sans", 16, "bold"),
-      relief=RIDGE,
-      bd=1,
-      width=30,
-  ).pack(pady=8)
+  Label(container, text="Inventory & Audit Report", font=("Sans", 16, "bold"), relief=RIDGE, bd=1, width=30 ).pack(pady=8)
 
   list_frame = Frame(container)
   list_frame.pack(fill=BOTH, expand=True, pady=5)
 
   scrollbar = Scrollbar(list_frame, orient=VERTICAL)
-  listbox = Listbox(
-      list_frame, font=("Courier", 9), yscrollcommand=scrollbar.set, height=14
-  )
+  listbox = Listbox(list_frame, font=("Courier", 9), yscrollcommand=scrollbar.set, height=14) 
   scrollbar.config(command=listbox.yview)
   scrollbar.pack(side=RIGHT, fill=Y)
   listbox.pack(side=LEFT, fill=BOTH, expand=True)
@@ -315,7 +287,7 @@ def stockR():
     data = Lg.ShowLog()
 
     listbox.insert(END, "=== INITIAL STOCK ===")
-    if not data["initial"]:
+    if not data["initial"]: #if there is no initial stock available
       listbox.insert(END, "No initial stock recorded.")
     else:
       for item_id, name, qty, exp_str in data["initial"]:
@@ -326,12 +298,12 @@ def stockR():
 
     listbox.insert(END, "")
     listbox.insert(END, "=== UPDATED STOCK REPORT ===")
-    if not data["report"]:
+    if not data["report"]: #if there is no report available 
       listbox.insert(END, "No updated stock records.")
     else:
       for item_id, name, qty, exp_str, status in data["report"]:
         listbox.insert(
-            END,
+            END, #indicats where the new component should be added
             f"ID: {item_id:<8} | Name: {name:<15} | Qty: {qty:<5} | Exp: {exp_str} | {status}",
         )
 
@@ -346,9 +318,7 @@ def stockR():
   except Exception as e:
     messagebox.showerror("Error", f"Failed to generate report: {e}")
 
-  Button(container, text="Back to Menu", width=15, command=mainMenu).pack(
-      pady=10
-  )
+  Button(container, text="Back to Menu", width=15, command=mainMenu).pack(pady=10)
 
 
 def contact():
@@ -380,12 +350,12 @@ def contact():
   msgText.grid(row=4, column=1, pady=5)
 
   def send_email():
-    sender = senderEntry.get().strip()
+    sender = senderEntry.get().strip()#removes spaces and stoer
     recipient = recipientEntry.get().strip()
     subject = subjectEntry.get().strip()
-    body = msgText.get("1.0", END).strip()
+    body = msgText.get("1.0", END).strip()#text size
 
-    email_pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+    email_pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$" #validates email and stores it in email_pattern
     try:
       if not re.match(email_pattern, sender) or not re.match(
           email_pattern, recipient
@@ -394,10 +364,12 @@ def contact():
       if not subject or not body:
         raise ValueError("Subject and message body cannot be empty.")
 
-      # Configure SMTP credentials below to send live emails
+      #Configure SMTP credentials below to send live emails
+      #Allows for users to enter information to send and email.
+      
       SMTP_SERVER = "smtp.gmail.com"
       SMTP_PORT = 465
-      APP_PASSWORD = "your_16_char_app_password"
+      APP_PASSWORD = "rwnv llqp avgi sxzg" #Changes based on the specific company email being used to send the password #this works with Nathanael's personal email
 
       msg = EmailMessage()
       msg["Subject"] = f"[Inventory Inquiry from {sender}] {subject}"
@@ -406,9 +378,9 @@ def contact():
       msg["Reply-To"] = sender
       msg.set_content(f"Sender Contact: {sender}\n\n{body}")
 
-      with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as smtp:
-        smtp.login(sender, APP_PASSWORD)
-        smtp.send_message(msg)
+      with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as smtp: #Connects to email provider
+        smtp.login(sender, APP_PASSWORD) #allows for user to log in
+        smtp.send_message(msg) #sends email
 
       messagebox.showinfo("Sent", f"Email sent to {recipient}!")
       mainMenu()
@@ -423,12 +395,8 @@ def contact():
     except Exception as e:
       messagebox.showerror("Email Error", f"Failed to send email: {e}")
 
-  Button(container, text="Send Email", width=15, command=send_email).grid(
-      row=5, column=0, pady=15
-  )
-  Button(container, text="Back", width=15, command=mainMenu).grid(
-      row=5, column=1, pady=15
-  )
+  Button(container, text="Send Email", width=15, command=send_email).grid(row=5, column=0, pady=15)
+  Button(container, text="Back", width=15, command=mainMenu).grid(row=5, column=1, pady=15)
 
 
 mainMenu()

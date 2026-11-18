@@ -39,7 +39,7 @@ class Log:
     self.report[item_id]["expiry_date"] = new_date
 
   def ShowLog(self) -> dict:
-   # """Returns structured tuples for initial stock, updated report, and audit logs."""
+    """Returns structured tuples for initial stock, updated report, and audit logs."""
     today = datetime.datetime.now()
 
     initial_list = []
