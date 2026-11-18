@@ -4,7 +4,7 @@ import tkinter.font as tkFont
 #entry widget: textbox thats accepts a single line of user input
 
 window = Tk()
-window.geometry("600x600")# window size
+window.geometry("540x400")# window size
 window.title("Inventory Management App")
 window.config(background="#276CF5")
 
@@ -16,6 +16,9 @@ def test():
     count+= 1
     #print(count) doesnt appear in the window
     counter.config(text=count) #to show the changed number in the window  Can be used to change sets of buttons?
+    if count == 5:
+        choice_1.destroy()
+        text1.config(text="This is crazy")
 
 def submit():
     inputT= uinput_1.get() #gets whatever was typed in the text area
@@ -95,3 +98,10 @@ window.mainloop() #constantly keeps the frame open
 #ALL operations should be placed before here?
 #pack function universally allows for the components to be placed on the window
 #Automatically sets itself up
+#Options are paned window or just an extra window
+#PANED WINDOW SETUP AFTER SETTING THE WHOLE THING UP VIA GRID
+#USE CLASSES/FUNCTION/METHODS TO UPDATE THE WINDOW AS THE PROGRAM IS OPENED
+#HAVE IT SO THAT THE PANED WINDOW IS ALWAYS BEING REPLACED AFTER THE OPERATION IS DONE? USING CONFIG?
+#CAN USE OVERRIDING TO CHANGE THE COMPONENTS
+#OR SIMPLY OVERWRITE THEM OR TOPLEVEL WIndow
+#Just use destroy object and keep recreating them for each option...
