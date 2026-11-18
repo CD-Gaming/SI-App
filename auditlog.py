@@ -1,72 +1,74 @@
 import datetime
-
 class Log:
-    def __init__(self):
-        self.initial_stock = {}
-        self.report = {}
-        self.log = []
 
-    def audit_log_store(self, text: str, text2: str, text3: str, date: datetime) -> list[str]:
-        self.log = []
-        info = f"{date.strftime('%Y-%m-%d %H:%M:%S')} : Item ID label {text} quantity, was changed from {text2} to {text3}"
-        self.log.append(info)
-        return self.log  
-    
-    def StoreLog(self, i, n, q, r, d):
-        self.initial_stock[i] = {  
-            "name": n,
-            "quantity": q,
-            "reorder_level": r,
-            "expiry date": d
-        }
-               
-        self.report[i] = {
-            "name": n,
-            "quantity": q,
-            "reorder_level": r,
-            "expiry date": d
-        }
-        
-    def UpdateLog(self, i, q, d):
-        id = i
-        new_qty = q
-        new_date = d
-        old_qty = self.report[id]["quantity"]
-        time = datetime.datetime.now()
-        
-        self.log = self.audit_log_store(id, old_qty, new_qty, time)
-        self.report[id]["quantity"] = new_qty 
-        self.report[id]["expiry date"] = new_date 
+  def __init__(self):
+    self.initial_stock = {}
+    self.report = {}
+    self.log = []
 
-    def ShowLog(self):
-        today = datetime.datetime.now()
+  def audit_log_store(
+      self, item_id: str, old_qty: int, new_qty: int, date: datetime.datetime
+  ) -> list[str]:
+    info = (
+        f"{date.strftime('%Y-%m-%d %H:%M:%S')} : Item ID '{item_id}' "
+        f"quantity changed from {old_qty} to {new_qty}"
+    )
+    self.log.append(info)
+    return self.log
 
-        print("Initial stock: ") 
-        for x, y in self.initial_stock.items():
-            print("ID: ", x, "| Name: ", y["name"], "| Qty: ", y["quantity"], "| Expiry Date: ", y["expiry date"].strftime('%d %m %Y'))
-        
-        print("----------------------------------")
-        print(f"Updated stock (Report): ")
-        for x, y in self.report.items():
-            qty = y["quantity"]
-            reorder = y["reorder_level"]
-            expiry = y["expiry date"]
-            
-            status = "Normal"
-            if expiry and expiry < today:
-                status = "Expired - Restock/Removal Necessary"
-            elif qty <= 0:
-                status = "Out of Stock"
-            elif qty <= (qty / 2): 
-                status = "Average"
-            elif qty <= reorder:
-                status = "Low Stock"
+  def StoreLog(self, item_id: str,  name: str,  qty: int, reorder: int,  expiry_date: datetime.datetime, ):
+    entry = {
+        "name": name,
+        "quantity": qty,
+        "initial_qty": qty,
+        "reorder_level": reorder,
+        "expiry_date": expiry_date,
+    }
+    self.initial_stock[item_id] = entry.copy()
+    self.report[item_id] = entry.copy()
 
-            print("ID:", x, "| Name:", y["name"], "| Qty:", qty, "| Expiry Date:", expiry.strftime('%d %m %Y'), "| Status:", status)
+  def UpdateLog(self, item_id: str, new_qty: int, new_date: datetime.datetime ):
+    if item_id not in self.report:
+      raise KeyError(f"Product ID '{item_id}' not found in audit report.")
 
-        print("----------------------------------")        
-        print("Audit Logs: ")
-        for x in self.log:
-            print(x)
+    old_qty = self.report[item_id]["quantity"]
+    now = datetime.datetime.now()
 
-        print("----------------------------------")
+    self.audit_log_store(item_id, old_qty, new_qty, now)
+    self.report[item_id]["quantity"] = new_qty
+    self.report[item_id]["expiry_date"] = new_date
+
+  def ShowLog(self) -> dict:
+   # """Returns structured tuples for initial stock, updated report, and audit logs."""
+    today = datetime.datetime.now()
+
+    initial_list = []
+    for item_id, y in self.initial_stock.items():
+      exp_str = y["expiry_date"].strftime("%d %m %Y")
+      initial_list.append((item_id, y["name"], y["quantity"], exp_str))
+
+    report_list = []
+    for item_id, y in self.report.items():
+      qty = y["quantity"]
+      initial = y.get("initial_qty", qty)
+      reorder = y["reorder_level"]
+      expiry = y["expiry_date"]
+
+      status = "Normal"
+      if expiry and expiry < today:
+        status = "Expired - Restock/Removal Necessary"
+      elif qty <= 0:
+        status = "Out of Stock"
+      elif qty <= reorder:
+        status = "Low Stock"
+      elif qty <= (initial / 2):
+        status = "Average"
+
+      exp_str = expiry.strftime("%d %m %Y")
+      report_list.append((item_id, y["name"], qty, exp_str, status))
+
+    return {
+        "initial": initial_list,
+        "report": report_list,
+        "logs": list(self.log),
+    }

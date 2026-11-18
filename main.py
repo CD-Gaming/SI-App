@@ -1,107 +1,437 @@
-#Inventory Management App
 import datetime
-from operations import Operations
+import re
+import smtplib
+from email.message import EmailMessage
+from tkinter import *
+from tkinter import messagebox
 from auditlog import Log
+from operations import Operations
+
+window = Tk()
+window.geometry("720x500")
+window.title("Inventory Management App")
 
 Op = Operations()
 Lg = Log()
 
-def space_split(text: str) -> list[str]: 
-    term = text.split(" ")
-    return term
+# Persistent Top Header
+Label(
+    window,
+    text="Inventory Management System",
+    font=("Sans", 24, "bold"),
+    fg="#0F0D05",
+    relief=RAISED,
+    bd=2,
+    width=32,
+).pack(pady=10)
 
-# main menu loop
-while True:
-    print("\n=== Inventory Management Menu ===")
-    print("1. Record Stock")
-    print("2. Update Inventory")
-    print("3. Check Stock Levels")
-    print("4. Inventory Report")
-    print("5. Contact Business")
-    print("6. Exit")
-    print("===================================")
-    
-    choice = input("Enter choice: ")
-    
-    # option 1: add new stock item
-    if choice == "1":
-        item_id = input("Create product ID: ") 
-       
-        exist = Op.StockCheck(item_id)
+# Container frame that gets swapped out cleanly on navigation
+container = Frame(window)
+container.pack(fill=BOTH, expand=True, padx=20, pady=10)
 
-        if exist == False:
-            name = input("Enter product name: ")
-            
-            try:
-                qty = int(input("Enter quantity: "))
-                reorder = int(input("Enter reorder level: ")) 
-                userI = input("Enter expiry date 'DAY MONTH YEAR' format with spaces: ")
-                holder = space_split(userI)
-                date = datetime.datetime(int(holder[2]), int(holder[1]), int(holder[0]))
-               
-                Lg.StoreLog(item_id, name, qty, reorder, date)
-                Op.StoreStock(item_id, name, qty, reorder, date)
-            except ValueError:
-                print("Error: Please enter valid numbers.")
-            except IndexError:
-                print("Error: Please enter the date with day, month, and year separated by spaces.")
-        else:
-            print("Error: Item already exists")
-            
-    # option 2: update existing stock quantity and expiry date
-    elif choice == "2":
-        item_id = input("Enter product ID to update: ")
-       
-        exist = Op.StockCheck(item_id)
-        
-        if exist == False: 
-            print("Item not found")
-        else:
-            try:
-                new_qty = int(input("Enter new quantity: "))
-                userI = input("Update expiry date 'DAY MONTH YEAR' format with spaces: ")
-                holder = space_split(userI)
-                new_date = datetime.datetime(int(holder[2]), int(holder[1]), int(holder[0]))
-                
-                Op.UpdateStock(item_id, new_qty, new_date)
-                Lg.UpdateLog(item_id, new_qty, new_date)   
-                print("Inventory updated successfully")
-            except ValueError:
-                print("Error: Please enter valid numbers.")
-            except IndexError:
-                print("Error: Please enter the date with day, month, and year separated by spaces.")
-            
-    # option 3: view all items and check status
-    elif choice == "3":
-        Op.ViewStock()
 
-    elif choice == "4":
-        Lg.ShowLog()
+def clear_container():
+  for widget in container.winfo_children():
+    widget.destroy()
 
-#     elif choice == "5":
-#         c_name = input("Please enter the name of the company")
-#         contact = input("Please enter the email that the request should be sent to")
-#         amt = input("Please input the amount of required stock")
 
-    elif choice == "6":
-        print("Exiting program")
-        break
+def parse_date(date_str: str) -> datetime.datetime:
+  """Parses 'DD MM YYYY' into a datetime object with strict validation."""
+  cleaned = date_str.strip()
+  try:
+    return datetime.datetime.strptime(cleaned, "%d %m %Y")
+  except ValueError:
+    raise ValueError(
+        "Invalid date format. Please use 'DD MM YYYY' (e.g., 25 12 2026)."
+    )
+
+
+def mainMenu():
+  clear_container()
+
+  Label(
+      container,
+      text="Main Menu",
+      font=("Sans", 18),
+      fg="#0F0D05",
+      relief=RIDGE,
+      bd=1,
+      width=30,
+  ).pack(pady=10)
+
+  buttons = [
+      ("Record Stock", recordS),
+      ("Update Stock", updateS),
+      ("Check Stock Levels", checkS),
+      ("Inventory Report", stockR),
+      ("Contact Business", contact),
+      ("Exit", window.destroy),
+  ]
+
+  for text, cmd in buttons:
+    Button(container, text=text, width=40, font=("Sans", 11), command=cmd).pack(
+        pady=5
+    )
+
+
+def recordS():
+  clear_container()
+
+  Label(
+      container,
+      text="Record New Product",
+      font=("Sans", 16, "bold"),
+      relief=RIDGE,
+      bd=1,
+      width=30,
+  ).grid(row=0, column=0, columnspan=3, pady=10)
+
+  Label(container, text="Product ID:").grid(row=1, column=0, sticky=W, pady=5)
+  proEntry = Entry(container, width=25)
+  proEntry.grid(row=1, column=1, pady=5)
+
+  def check():
+    item_id = proEntry.get().strip()
+    if not item_id:
+      messagebox.showwarning("Input Required", "Please enter a Product ID.")
+      return
+    if Op.StockCheck(item_id):
+      messagebox.showerror(
+          "Duplicate ID", f"Product ID '{item_id}' already exists!"
+      )
     else:
-        print("Invalid choice")
+      messagebox.showinfo("Available", f"Product ID '{item_id}' is available.")
 
- #Info needed (create a seperate dictionary for the report? maybe find a way to store it though)
-     #Item amount, 
-     #name of the item, 
-     #item ID, 
-     #expiry date(include expiry date) 
-     #get some Ui going somehow- 
-     #prompt user to enter company email...submit a request through email? 
-    
-     #Maybe compare specific products? 
-     #A different version is saved for every updated change made to the stock or maybe every few updates??
-     #Use a nested dictionary? for multiple reports
-     #Change the reports to an unchangeable storage type?
-   
-     #Should audit logs also show, when the products are added?
-    
-     #Allow for all variables to be change able for the Update section?
+  Button(container, text="Check ID", width=15, command=check).grid(
+      row=1, column=2, padx=5
+  )
+
+  Label(container, text="Product Name:").grid(row=2, column=0, sticky=W, pady=5)
+  nameEntry = Entry(container, width=25)
+  nameEntry.grid(row=2, column=1, pady=5)
+
+  Label(container, text="Product Amount:").grid(
+      row=3, column=0, sticky=W, pady=5
+  )
+  amtEntry = Entry(container, width=25)
+  amtEntry.grid(row=3, column=1, pady=5)
+
+  Label(container, text="Reorder Level:").grid(row=4, column=0, sticky=W, pady=5)
+  reorderEntry = Entry(container, width=25)
+  reorderEntry.grid(row=4, column=1, pady=5)
+
+  Label(container, text="Expiry Date (DD MM YYYY):").grid(
+      row=5, column=0, sticky=W, pady=5
+  )
+  dateEntry = Entry(container, width=25)
+  dateEntry.grid(row=5, column=1, pady=5)
+
+  def submit():
+    try:
+      item_id = proEntry.get().strip()
+      name = nameEntry.get().strip()
+      raw_qty = amtEntry.get().strip()
+      raw_reorder = reorderEntry.get().strip()
+      raw_date = dateEntry.get().strip()
+
+      if not all([item_id, name, raw_qty, raw_reorder, raw_date]):
+        raise ValueError("All fields are required.")
+
+      qty = int(raw_qty)
+      reorder = int(raw_reorder)
+      expiry_dt = parse_date(raw_date)
+
+      Op.StoreStock(item_id, name, qty, reorder, expiry_dt)
+      Lg.StoreLog(item_id, name, qty, reorder, expiry_dt)
+
+      messagebox.showinfo("Success", f"Product '{name}' recorded successfully!")
+      for entry in (proEntry, nameEntry, amtEntry, reorderEntry, dateEntry):
+        entry.delete(0, END)
+
+    except KeyError as e:
+      messagebox.showerror("Duplicate Entry", str(e))
+    except ValueError as e:
+      messagebox.showerror("Invalid Input", str(e))
+    except Exception as e:
+      messagebox.showerror("Error", f"An unexpected error occurred: {e}")
+
+  Button(container, text="Submit", width=12, command=submit).grid(
+      row=6, column=0, pady=20
+  )
+  Button(container, text="Back", width=12, command=mainMenu).grid(
+      row=6, column=2, pady=20
+  )
+
+
+def updateS():
+  clear_container()
+
+  Label(
+      container,
+      text="Update Existing Stock",
+      font=("Sans", 16, "bold"),
+      relief=RIDGE,
+      bd=1,
+      width=30,
+  ).grid(row=0, column=0, columnspan=3, pady=10)
+
+  Label(container, text="Product ID:").grid(row=1, column=0, sticky=W, pady=5)
+  proEntry = Entry(container, width=25)
+  proEntry.grid(row=1, column=1, pady=5)
+
+  def check():
+    item_id = proEntry.get().strip()
+    if not item_id:
+      messagebox.showwarning("Input Required", "Please enter a Product ID.")
+      return
+    if Op.StockCheck(item_id):
+      info = Op.stock_data[item_id]
+      messagebox.showinfo(
+          "Product Found",
+          f"Name: {info['name']}\nCurrent Qty: {info['quantity']}\n"
+          f"Expiry: {info['expiry_date'].strftime('%d %m %Y')}",
+      )
+    else:
+      messagebox.showerror(
+          "Not Found", f"Product ID '{item_id}' does not exist."
+      )
+
+  Button(container, text="Check ID", width=15, command=check).grid(
+      row=1, column=2, padx=5
+  )
+
+  Label(container, text="New Quantity:").grid(row=2, column=0, sticky=W, pady=5)
+  amtEntry = Entry(container, width=25)
+  amtEntry.grid(row=2, column=1, pady=5)
+
+  Label(container, text="New Expiry Date (DD MM YYYY):").grid(
+      row=3, column=0, sticky=W, pady=5
+  )
+  dateEntry = Entry(container, width=25)
+  dateEntry.grid(row=3, column=1, pady=5)
+
+  def submit():
+    try:
+      item_id = proEntry.get().strip()
+      raw_qty = amtEntry.get().strip()
+      raw_date = dateEntry.get().strip()
+
+      if not all([item_id, raw_qty, raw_date]):
+        raise ValueError("All fields are required.")
+
+      new_qty = int(raw_qty)
+      new_date = parse_date(raw_date)
+
+      Op.UpdateStock(item_id, new_qty, new_date)
+      Lg.UpdateLog(item_id, new_qty, new_date)
+
+      messagebox.showinfo(
+          "Updated", f"Stock for ID '{item_id}' updated successfully!"
+      )
+      for entry in (proEntry, amtEntry, dateEntry):
+        entry.delete(0, END)
+
+    except KeyError as e:
+      messagebox.showerror("Not Found", str(e))
+    except ValueError as e:
+      messagebox.showerror("Invalid Input", str(e))
+    except Exception as e:
+      messagebox.showerror("Error", f"An unexpected error occurred: {e}")
+
+  Button(container, text="Submit", width=12, command=submit).grid(
+      row=4, column=0, pady=20
+  )
+  Button(container, text="Back", width=12, command=mainMenu).grid(
+      row=4, column=2, pady=20
+  )
+
+
+def checkS():
+  clear_container()
+
+  Label(
+      container,
+      text="Current Stock Levels",
+      font=("Sans", 16, "bold"),
+      relief=RIDGE,
+      bd=1,
+      width=30,
+  ).pack(pady=8)
+
+  list_frame = Frame(container)
+  list_frame.pack(fill=BOTH, expand=True, pady=5)
+
+  scrollbar = Scrollbar(list_frame, orient=VERTICAL)
+  listbox = Listbox(
+      list_frame, font=("Courier", 10), yscrollcommand=scrollbar.set, height=12
+  )
+  scrollbar.config(command=listbox.yview)
+  scrollbar.pack(side=RIGHT, fill=Y)
+  listbox.pack(side=LEFT, fill=BOTH, expand=True)
+
+  try:
+    stock_tuples = Op.ViewStock()
+    if not stock_tuples:
+      listbox.insert(END, "No stock records found.")
+    else:
+      header = f"{'ID':<8} | {'Name':<16} | {'Qty':<6} | {'Expiry':<12} | {'Status'}"
+      listbox.insert(END, header)
+      listbox.insert(END, "-" * 75)
+      for item_id, name, qty, exp_str, status in stock_tuples:
+        row = f"{item_id:<8} | {name:<16} | {qty:<6} | {exp_str:<12} | {status}"
+        listbox.insert(END, row)
+  except Exception as e:
+    messagebox.showerror("Error", f"Failed to load stock levels: {e}")
+
+  Button(container, text="Back to Menu", width=15, command=mainMenu).pack(
+      pady=10
+  )
+
+
+def stockR():
+  clear_container()
+
+  Label(
+      container,
+      text="Inventory & Audit Report",
+      font=("Sans", 16, "bold"),
+      relief=RIDGE,
+      bd=1,
+      width=30,
+  ).pack(pady=8)
+
+  list_frame = Frame(container)
+  list_frame.pack(fill=BOTH, expand=True, pady=5)
+
+  scrollbar = Scrollbar(list_frame, orient=VERTICAL)
+  listbox = Listbox(
+      list_frame, font=("Courier", 9), yscrollcommand=scrollbar.set, height=14
+  )
+  scrollbar.config(command=listbox.yview)
+  scrollbar.pack(side=RIGHT, fill=Y)
+  listbox.pack(side=LEFT, fill=BOTH, expand=True)
+
+  try:
+    data = Lg.ShowLog()
+
+    listbox.insert(END, "=== INITIAL STOCK ===")
+    if not data["initial"]:
+      listbox.insert(END, "No initial stock recorded.")
+    else:
+      for item_id, name, qty, exp_str in data["initial"]:
+        listbox.insert(
+            END,
+            f"ID: {item_id:<8} | Name: {name:<15} | Qty: {qty:<5} | Expiry: {exp_str}",
+        )
+
+    listbox.insert(END, "")
+    listbox.insert(END, "=== UPDATED STOCK REPORT ===")
+    if not data["report"]:
+      listbox.insert(END, "No updated stock records.")
+    else:
+      for item_id, name, qty, exp_str, status in data["report"]:
+        listbox.insert(
+            END,
+            f"ID: {item_id:<8} | Name: {name:<15} | Qty: {qty:<5} | Exp: {exp_str} | {status}",
+        )
+
+    listbox.insert(END, "")
+    listbox.insert(END, "=== AUDIT LOGS ===")
+    if not data["logs"]:
+      listbox.insert(END, "No changes logged yet.")
+    else:
+      for entry in data["logs"]:
+        listbox.insert(END, entry)
+
+  except Exception as e:
+    messagebox.showerror("Error", f"Failed to generate report: {e}")
+
+  Button(container, text="Back to Menu", width=15, command=mainMenu).pack(
+      pady=10
+  )
+
+
+def contact():
+  clear_container()
+
+  Label(
+      container,
+      text="Contact Supplier / Business",
+      font=("Sans", 16, "bold"),
+      relief=RIDGE,
+      bd=1,
+      width=30,
+  ).grid(row=0, column=0, columnspan=2, pady=10)
+
+  Label(container, text="Your Email:").grid(row=1, column=0, sticky=W, pady=5)
+  senderEntry = Entry(container, width=35)
+  senderEntry.grid(row=1, column=1, pady=5)
+
+  Label(container, text="Company Email:").grid(row=2, column=0, sticky=W, pady=5)
+  recipientEntry = Entry(container, width=35)
+  recipientEntry.grid(row=2, column=1, pady=5)
+
+  Label(container, text="Subject:").grid(row=3, column=0, sticky=W, pady=5)
+  subjectEntry = Entry(container, width=35)
+  subjectEntry.grid(row=3, column=1, pady=5)
+
+  Label(container, text="Message:").grid(row=4, column=0, sticky=NW, pady=5)
+  msgText = Text(container, width=35, height=6)
+  msgText.grid(row=4, column=1, pady=5)
+
+  def send_email():
+    sender = senderEntry.get().strip()
+    recipient = recipientEntry.get().strip()
+    subject = subjectEntry.get().strip()
+    body = msgText.get("1.0", END).strip()
+
+    email_pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+    try:
+      if not re.match(email_pattern, sender) or not re.match(
+          email_pattern, recipient
+      ):
+        raise ValueError("Please enter valid email addresses.")
+      if not subject or not body:
+        raise ValueError("Subject and message body cannot be empty.")
+
+      # Configure SMTP credentials below to send live emails
+      SMTP_SERVER = "smtp.gmail.com"
+      SMTP_PORT = 465
+      APP_PASSWORD = "your_16_char_app_password"
+
+      msg = EmailMessage()
+      msg["Subject"] = f"[Inventory Inquiry from {sender}] {subject}"
+      msg["From"] = sender
+      msg["To"] = recipient
+      msg["Reply-To"] = sender
+      msg.set_content(f"Sender Contact: {sender}\n\n{body}")
+
+      with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as smtp:
+        smtp.login(sender, APP_PASSWORD)
+        smtp.send_message(msg)
+
+      messagebox.showinfo("Sent", f"Email sent to {recipient}!")
+      mainMenu()
+
+    except ValueError as e:
+      messagebox.showwarning("Validation Error", str(e))
+    except smtplib.SMTPAuthenticationError:
+      messagebox.showerror(
+          "Authentication Failed",
+          "Could not log in to the mail server. Check your email and App Password.",
+      )
+    except Exception as e:
+      messagebox.showerror("Email Error", f"Failed to send email: {e}")
+
+  Button(container, text="Send Email", width=15, command=send_email).grid(
+      row=5, column=0, pady=15
+  )
+  Button(container, text="Back", width=15, command=mainMenu).grid(
+      row=5, column=1, pady=15
+  )
+
+
+mainMenu()
+window.mainloop()
+
+
